@@ -1,0 +1,76 @@
+[package]
+name = "rag-search"
+version = "0.1.0"
+description = "RAG Search - Tìm kiếm tài liệu thông minh"
+authors = ["RAG Search Team"]
+edition = "2021"
+
+[lib]
+name = "rag_search_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Tauri
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Full-text search
+tantivy = "0.22"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# File watcher (OS-native events: FSEvents on macOS, ReadDirectoryChangesW on Windows)
+notify-debouncer-mini = "0.5"
+
+# Document parser — Kreuzberg (75+ formats, OCR, tables)
+kreuzberg = { version = "4.3", default-features = false, features = ["bundled-pdfium", "excel", "office", "html", "tokio-runtime", "ocr", "chunking"] }
+
+# Embedding via Gemini API (uses reqwest HTTP client above)
+# Removed: candle-core, candle-nn, candle-transformers, tokenizers
+
+# HTTP client (for Gemini API)
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# Utilities
+uuid = { version = "1", features = ["v4"] }
+sha2 = "0.10"               # File hashing
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.11"
+thiserror = "2"
+futures-util = "0.3"
+num_cpus = "1"
+
+# HNSW vector index (pure Rust, ~15KB)
+instant-distance = "0.6"
+
+# Parallel CPU-bound processing (parse + chunk)
+rayon = "1"
+bincode = "1"
+
+# License / hardware ID
+machine-uid = "0.5"
+
+[features]
+# This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]
+
+# Platform-specific: macOS uses FSEvents, Windows/Linux uses default backend
+[target.'cfg(target_os = "macos")'.dependencies]
+notify = { version = "7", features = ["macos_fsevent"] }
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+notify = { version = "7" }

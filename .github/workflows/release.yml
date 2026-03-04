@@ -1,0 +1,117 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*" # Trigger on version tags: v0.1.0, v1.0.0, etc.
+
+# Allow creating releases
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS (Apple Silicon + Intel universal)
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            label: macOS-arm64
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            label: macOS-x64
+          # Windows
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            label: Windows-x64
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── System Dependencies ──
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Tesseract for OCR (kreuzberg needs leptonica headers)
+          brew install tesseract leptonica
+
+      - name: Install system dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          # Tesseract OCR for Windows
+          choco install tesseract -y
+          # Add to PATH
+          echo "C:\Program Files\Tesseract-OCR" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      # ── Rust Toolchain ──
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          cache-on-failure: true
+
+      # ── Node.js ──
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      # ── Tessdata (download OCR training data ~42MB) ──
+      - name: Download tessdata
+        shell: bash
+        run: |
+          mkdir -p src-tauri/tessdata
+          TESSDATA_URL="https://github.com/tesseract-ocr/tessdata_fast/raw/main"
+          for lang in eng vie jpn; do
+            if [ ! -f "src-tauri/tessdata/${lang}.traineddata" ]; then
+              echo "Downloading ${lang}.traineddata..."
+              curl -L -o "src-tauri/tessdata/${lang}.traineddata" "${TESSDATA_URL}/${lang}.traineddata"
+            fi
+          done
+          ls -la src-tauri/tessdata/
+          echo "✅ tessdata OK"
+
+      # ── Build with Tauri ──
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Tesseract env for kreuzberg OCR build
+          TESSDATA_PREFIX: ${{ github.workspace }}/src-tauri/tessdata
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "RAG Search ${{ github.ref_name }}"
+          releaseBody: |
+            ## RAG Search ${{ github.ref_name }}
+
+            Tìm kiếm tài liệu thông minh với AI — hỗ trợ 75+ định dạng file.
+
+            ### 📥 Tải về
+            - **macOS (Apple Silicon)**: `.dmg` file cho Mac M1/M2/M3/M4
+            - **macOS (Intel)**: `.dmg` file cho Mac Intel
+            - **Windows**: `.msi` installer hoặc `.exe`
+
+            ### 🔑 Yêu cầu
+            - Gemini API key (miễn phí tại [Google AI Studio](https://aistudio.google.com/apikey))
+
+            ### ⚡ Cài đặt
+            1. Tải file phù hợp với hệ điều hành
+            2. macOS: Mở `.dmg` → kéo vào Applications
+            3. Windows: Chạy `.msi` installer
+            4. Mở app → Nhập API key → Thêm thư mục tài liệu
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.target }}

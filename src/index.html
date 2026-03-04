@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="vi" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RAG Search — Tìm kiếm tài liệu thông minh</title>
+    <meta
+      name="description"
+      content="Ứng dụng tìm kiếm tài liệu thông minh với AI"
+    />
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/main.css?v=13" />
+    <link rel="stylesheet" href="styles/sidebar.css?v=13" />
+    <link rel="stylesheet" href="styles/chat.css?v=13" />
+    <link rel="stylesheet" href="styles/settings.css?v=13" />
+  </head>
+  <body>
+    <div id="app" class="app-layout">
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SIDEBAR -->
+      <!-- ═══════════════════════════════════════════ -->
+      <aside id="sidebar" class="sidebar">
+        <!-- Logo & App Name -->
+        <div class="sidebar-header">
+          <div class="logo">
+            <i data-lucide="sparkles" class="logo-icon"></i>
+            <span class="logo-text">RAG Search</span>
+          </div>
+        </div>
+
+        <!-- Chat Sessions -->
+        <div class="sidebar-section sidebar-sessions">
+          <div class="section-header">
+            <span class="section-title">
+              <i data-lucide="messages-square" class="section-icon"></i>
+              Hội thoại
+            </span>
+            <button
+              id="btn-new-session"
+              class="btn-icon-sm"
+              title="Hội thoại mới (Ctrl+N)"
+            >
+              <i data-lucide="plus"></i>
+            </button>
+          </div>
+          <div id="chat-sessions-list" class="chat-sessions-list">
+            <!-- Sessions loaded dynamically -->
+          </div>
+        </div>
+
+        <!-- Folder Tree -->
+        <div class="sidebar-section">
+          <div class="section-header">
+            <span class="section-title">
+              <i data-lucide="folder-open" class="section-icon"></i>
+              Thư mục
+            </span>
+            <button
+              id="btn-add-folder"
+              class="btn-icon-sm"
+              title="Thêm thư mục"
+            >
+              <i data-lucide="folder-plus"></i>
+            </button>
+          </div>
+          <div id="folder-tree" class="folder-tree">
+            <div class="empty-state" id="empty-folders">
+              <i data-lucide="folder-input" class="empty-icon"></i>
+              <p>
+                Kéo thả thư mục vào đây<br />hoặc nhấn nút <strong>+</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar Footer -->
+        <div class="sidebar-footer">
+          <button id="btn-settings" class="btn-sidebar" title="Cài đặt">
+            <i data-lucide="settings"></i>
+            <span>Cài đặt</span>
+          </button>
+          <button
+            id="btn-theme-toggle"
+            class="btn-icon"
+            title="Đổi giao diện sáng/tối"
+          >
+            <i data-lucide="moon" id="theme-icon-dark"></i>
+            <i
+              data-lucide="sun"
+              id="theme-icon-light"
+              style="display: none"
+            ></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Sidebar Resize Handle -->
+      <div
+        id="sidebar-resizer"
+        class="sidebar-resizer"
+        title="Kéo để thay đổi kích thước"
+      ></div>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- MAIN CHAT PANEL -->
+      <!-- ═══════════════════════════════════════════ -->
+      <main id="main-panel" class="main-panel">
+        <!-- Welcome Screen (shown when no messages) -->
+        <div id="welcome-screen" class="welcome-screen">
+          <div class="welcome-content">
+            <div class="welcome-logo">
+              <i data-lucide="sparkles" class="welcome-icon"></i>
+            </div>
+            <h1 class="welcome-title">Xin chào!</h1>
+            <p class="welcome-subtitle">
+              Hãy nhập câu hỏi hoặc kéo thả tài liệu để bắt đầu
+            </p>
+            <div class="welcome-shortcuts">
+              <span class="shortcut"><kbd>Enter</kbd> Gửi</span>
+              <span class="shortcut"
+                ><kbd>Ctrl</kbd>+<kbd>N</kbd> Chat mới</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div id="chat-messages" class="chat-messages" style="display: none">
+          <!-- Messages will be dynamically inserted here -->
+        </div>
+
+        <!-- Input Bar -->
+        <div class="input-bar">
+          <!-- Attached files preview -->
+          <div
+            id="attached-files-preview"
+            class="attached-files-preview"
+            style="display: none"
+          ></div>
+
+          <div class="input-wrapper">
+            <!-- Attach File Button -->
+            <button id="btn-attach" class="btn-attach" title="Gắn kèm tài liệu">
+              <i data-lucide="paperclip"></i>
+            </button>
+
+            <!-- Text Input — Unified Smart Query -->
+            <textarea
+              id="chat-input"
+              class="chat-input"
+              placeholder="Hỏi AI hoặc gõ / để chọn thư mục..."
+              rows="1"
+              title="Nhập câu hỏi. Gõ / để lọc theo thư mục. Enter gửi, Shift+Enter xuống dòng."
+            ></textarea>
+
+            <!-- Model Selector (populated from API) -->
+            <select
+              id="model-select"
+              class="model-select-inline"
+              title="Chọn model AI"
+            >
+              <option value="gemini-2.0-flash">⚡ Flash 2.0</option>
+            </select>
+
+            <!-- Send Button -->
+            <button id="btn-send" class="btn-send" title="Gửi (Enter)">
+              <i data-lucide="arrow-up"></i>
+            </button>
+          </div>
+
+          <!-- File Picker Dropdown -->
+          <div
+            id="file-picker-dropdown"
+            class="file-picker-dropdown"
+            style="display: none"
+          >
+            <div class="file-picker-header">
+              <input
+                type="text"
+                id="file-picker-search"
+                class="file-picker-search"
+                placeholder="Tìm tài liệu..."
+              />
+              <button
+                id="btn-browse-file"
+                class="btn-browse-file"
+                title="Chọn file từ máy tính"
+              >
+                <i data-lucide="folder-open"></i>
+                <span>Duyệt file</span>
+              </button>
+            </div>
+            <div id="file-picker-list" class="file-picker-list">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- SOURCE PREVIEW PANEL -->
+      <!-- ═══════════════════════════════════════════ -->
+      <aside id="source-panel" class="source-panel" style="display: none">
+        <div class="source-header">
+          <div class="source-title">
+            <i data-lucide="file-text"></i>
+            <span id="source-filename">document.pdf</span>
+          </div>
+          <button id="btn-close-source" class="btn-icon" title="Đóng xem trước">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div id="source-content" class="source-content">
+          <!-- Source file content preview -->
+        </div>
+        <div class="source-footer">
+          <button id="btn-open-file" class="btn-primary" title="Mở file gốc">
+            <i data-lucide="external-link"></i>
+            <span>Mở file gốc</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SETTINGS MODAL -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div id="settings-modal" class="modal-overlay" style="display: none">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>
+            <i data-lucide="settings"></i>
+            Cài đặt
+          </h2>
+          <button id="btn-close-settings" class="btn-icon" title="Đóng">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- API Keys (nhiều key xoay vòng) -->
+          <div class="setting-group">
+            <label class="setting-label">Gemini API Keys</label>
+            <div class="setting-input-group">
+              <textarea
+                id="input-api-keys"
+                class="setting-input"
+                rows="5"
+                placeholder="Nhập API keys (mỗi dòng 1 key)&#10;VD:&#10;AIzaSyA...&#10;AIzaSyB..."
+                style="
+                  resize: vertical;
+                  font-family: monospace;
+                  font-size: 12px;
+                "
+              ></textarea>
+              <button
+                id="btn-validate-key"
+                class="btn-secondary"
+                title="Kiểm tra key đầu tiên"
+              >
+                Kiểm tra
+              </button>
+            </div>
+            <p class="setting-hint">
+              Mỗi dòng 1 key — tự động xoay vòng khi hết quota. Lấy key tại
+              <a href="https://aistudio.google.com/apikey" target="_blank"
+                >Google AI Studio</a
+              >
+            </p>
+          </div>
+
+          <!-- Default Model -->
+          <div class="setting-group">
+            <label class="setting-label">Model mặc định</label>
+            <div class="custom-model-select" id="custom-model-select">
+              <button
+                type="button"
+                class="custom-model-select__btn"
+                id="model-select-btn"
+              >
+                <span id="model-select-label">Gemini 2.0 Flash</span>
+                <i data-lucide="chevrons-up-down" class="select-icon"></i>
+              </button>
+              <div
+                class="custom-model-select__dropdown"
+                id="model-select-dropdown"
+                style="display: none"
+              >
+                <!-- populated by JS -->
+              </div>
+            </div>
+            <input type="hidden" id="setting-model" value="gemini-2.0-flash" />
+            <div class="setting-hint">
+              Models tự cập nhật khi xác thực API key ✓
+            </div>
+          </div>
+
+          <!-- Theme -->
+          <div class="setting-group">
+            <label class="setting-label">Giao diện</label>
+            <div class="setting-radio-group">
+              <label class="radio-card">
+                <input type="radio" name="theme" value="dark" checked />
+                <i data-lucide="moon"></i>
+                <span>Tối</span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="theme" value="light" />
+                <i data-lucide="sun"></i>
+                <span>Sáng</span>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="theme" value="auto" />
+                <i data-lucide="monitor"></i>
+                <span>Tự động</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Ngưỡng phù hợp tài liệu -->
+          <div class="setting-group">
+            <label class="setting-label">Ngưỡng phù hợp tài liệu</label>
+            <div class="setting-slider-group">
+              <input
+                type="range"
+                id="setting-min-score"
+                class="setting-slider"
+                min="10"
+                max="90"
+                step="5"
+                value="60"
+                title="Điều chỉnh mức độ phù hợp tối thiểu của tài liệu"
+              />
+              <span class="slider-value" id="min-score-value">60%</span>
+            </div>
+            <p class="setting-hint">
+              File có điểm phù hợp dưới ngưỡng này sẽ bị loại bỏ. Giảm để tìm
+              nhiều file hơn, tăng để chỉ giữ file chính xác nhất.
+            </p>
+          </div>
+
+          <!-- Mức độ sáng tạo -->
+          <div class="setting-group">
+            <label class="setting-label">Mức độ sáng tạo</label>
+            <div class="setting-slider-group">
+              <span class="slider-label-left">Chính xác</span>
+              <input
+                type="range"
+                id="setting-creativity"
+                class="setting-slider"
+                min="0"
+                max="10"
+                step="1"
+                value="7"
+                title="Điều chỉnh mức độ sáng tạo của AI"
+              />
+              <span class="slider-label-right">Sáng tạo</span>
+            </div>
+            <div class="creativity-labels">
+              <span class="creativity-indicator" id="creativity-indicator"
+                >🎯 Cân bằng</span
+              >
+            </div>
+            <p class="setting-hint">
+              Thấp = câu trả lời chính xác, bám sát dữ liệu. Cao = câu trả lời
+              phong phú, đa dạng hơn.
+            </p>
+          </div>
+
+          <!-- Xóa lịch sử -->
+          <div class="setting-group">
+            <label class="setting-label">Lịch sử hội thoại</label>
+            <button
+              id="btn-clear-all-history"
+              class="btn-danger"
+              title="Xóa toàn bộ lịch sử hội thoại"
+            >
+              <i data-lucide="trash-2"></i>
+              <span>Xóa toàn bộ lịch sử</span>
+            </button>
+            <p class="setting-hint">Hành động này không thể hoàn tác</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            id="btn-save-settings"
+            class="btn-primary"
+            title="Lưu cài đặt"
+          >
+            <i data-lucide="save"></i>
+            <span>Lưu cài đặt</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/api.js?v=40"></script>
+    <script src="js/app.js?v=40"></script>
+    <script src="js/chat.js?v=40"></script>
+    <script src="js/folder.js?v=40"></script>
+    <script src="js/search.js?v=40"></script>
+    <script src="js/settings.js?v=40"></script>
+  </body>
+</html>
