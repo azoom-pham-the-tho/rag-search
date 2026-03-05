@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "RAG Search",
+  "productName": "DocuMind",
   "version": "0.1.0",
   "identifier": "com.ragsearch.app",
   "build": {
@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "RAG Search — Tìm kiếm tài liệu thông minh",
+        "title": "DocuMind — Tìm kiếm tài liệu thông minh",
         "width": 1200,
         "height": 800,
         "minWidth": 900,

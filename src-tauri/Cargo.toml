@@ -1,7 +1,7 @@
 [package]
 name = "rag-search"
 version = "0.1.0"
-description = "RAG Search - Tìm kiếm tài liệu thông minh"
+description = "DocuMind - Tìm kiếm tài liệu thông minh"
 authors = ["RAG Search Team"]
 edition = "2021"
 

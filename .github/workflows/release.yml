@@ -94,9 +94,9 @@ jobs:
           TESSDATA_PREFIX: ${{ github.workspace }}/src-tauri/tessdata
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: "RAG Search ${{ github.ref_name }}"
+          releaseName: "DocuMind ${{ github.ref_name }}"
           releaseBody: |
-            ## RAG Search ${{ github.ref_name }}
+            ## DocuMind ${{ github.ref_name }}
 
             Tìm kiếm tài liệu thông minh với AI — hỗ trợ 75+ định dạng file.
 
