@@ -102,6 +102,11 @@ jobs:
 
             Tìm kiếm tài liệu thông minh với AI — hỗ trợ 75+ định dạng file.
 
+            ### 🔧 Thay đổi
+            - 🎨 **Icon mới** — thiết kế lại icon app, nền transparent
+            - 🍎 **Fix lỗi "damaged" trên macOS** — ad-hoc code signing, không còn lỗi "is damaged and can't be opened"
+            - ℹ️ Lần đầu mở trên macOS: chuột phải vào app → **Open** → xác nhận mở
+
             ### 📥 Tải về
             - **macOS (Apple Silicon)**: `.dmg` file cho Mac M1/M2/M3/M4
             - **macOS (Intel)**: `.dmg` file cho Mac Intel
