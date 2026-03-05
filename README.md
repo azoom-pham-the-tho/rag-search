@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src-tauri/icons/icon.png" width="120" alt="DocuMind Logo"/>
+  <img src="src-tauri/icons/icon.png?v=2" width="120" alt="DocuMind Logo"/>
 </p>
 
 <h1 align="center">DocuMind</h1>
